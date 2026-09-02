@@ -309,15 +309,13 @@ def read_message() -> tuple[dict[str, Any] | None, bool]:
 
 
 def write_message(msg: dict[str, Any], *, framed: bool) -> None:
-    raw = json.dumps(msg, ensure_ascii=False)
+    encoded = json.dumps(msg, ensure_ascii=False).encode("utf-8")
     if framed:
-        encoded = raw.encode("utf-8")
         sys.stdout.buffer.write(f"Content-Length: {len(encoded)}\r\n\r\n".encode("ascii"))
         sys.stdout.buffer.write(encoded)
-        sys.stdout.buffer.flush()
     else:
-        sys.stdout.write(raw + "\n")
-        sys.stdout.flush()
+        sys.stdout.buffer.write(encoded + b"\n")
+    sys.stdout.buffer.flush()
 
 
 def dispatch(msg: dict[str, Any]) -> dict[str, Any] | None:
