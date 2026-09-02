@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "google-maps": {
+      "url": "https://mapstools.googleapis.com/mcp",
+      "headers": {
+        "X-Goog-Api-Key": "${GOOGLE_MAPS_API_KEY}"
+      }
+    },
+    "places-text": {
+      "command": "python",
+      "args": ["-u", "mcp/places_text_search.py"],
+      "env": {
+        "GOOGLE_MAPS_API_KEY": "${GOOGLE_MAPS_API_KEY}"
+      }
+    }
+  }
+}

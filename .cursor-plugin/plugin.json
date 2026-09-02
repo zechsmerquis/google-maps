@@ -1,0 +1,21 @@
+{
+  "name": "google-maps",
+  "version": "0.2.0",
+  "description": "Google Maps for agents: Maps Grounding Lite (search, routes, weather) plus Places Text Search for structured ratings, hours, and price. Saved lists, transit, and photos stay out.",
+  "author": {
+    "name": "Andrew Davis"
+  },
+  "license": "MIT",
+  "keywords": ["google-maps", "places", "routes", "weather", "mcp"],
+  "variables": {
+    "type": "object",
+    "properties": {
+      "GOOGLE_MAPS_API_KEY": {
+        "type": "string",
+        "title": "Google Maps API key",
+        "description": "Maps Platform API key with Maps Grounding Lite and Places API (New) enabled. Set in Plugins → Configure. Never commit or paste in chat."
+      }
+    },
+    "required": ["GOOGLE_MAPS_API_KEY"]
+  }
+}
