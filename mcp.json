@@ -10,7 +10,8 @@
       "command": "python",
       "args": ["-u", "mcp/places_text_search.py"],
       "env": {
-        "GOOGLE_MAPS_API_KEY": "${GOOGLE_MAPS_API_KEY}"
+        "GOOGLE_MAPS_API_KEY": "${GOOGLE_MAPS_API_KEY}",
+        "PYTHONIOENCODING": "utf-8"
       }
     }
   }

@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -68,6 +69,26 @@ class DispatchKeyRedaction(unittest.TestCase):
         stdout = proc.stdout.decode("utf-8")
         self.assertNotIn(LEAK_KEY, stdout)
         self.assertIn("[REDACTED]", stdout)
+
+    def test_source_uses_load_api_key(self) -> None:
+        src = Path(m.__file__).read_text(encoding="utf-8")
+        self.assertNotIn("sanitize(str(exc), None)", src)
+        self.assertIn("sanitize(str(exc), load_api_key())", src)
+
+
+class PluginRoot(unittest.TestCase):
+    def test_plugin_root_fallback_is_repo_root(self) -> None:
+        root = m.parse_plugin_root([], {}, str(Path(m.__file__)))
+        self.assertEqual(root, ROOT)
+
+    def test_plugin_root_rejects_escape(self) -> None:
+        outside = tempfile.mkdtemp()
+        with self.assertRaises(ValueError):
+            m.parse_plugin_root(
+                ["--plugin-root", outside],
+                {},
+                str(Path(m.__file__)),
+            )
 
 
 if __name__ == "__main__":

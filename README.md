@@ -1,8 +1,8 @@
 # google-maps
 
-Cursor plugin that connects agents to [Maps Grounding Lite](https://developers.google.com/maps/ai/grounding-lite) over a remote MCP, plus Places API (New) Text Search over a local Python stdio MCP.
+Cursor plugin that connects agents to [Maps Grounding Lite](https://developers.google.com/maps/ai/grounding-lite) over a remote MCP, plus Places API (New) Text Search over a Python stdio MCP on the computer that loaded the plugin (Cursor IDE or Grok Bot cloud).
 
-Grounding Lite stays at `https://mapstools.googleapis.com/mcp`. Text Search runs as a second MCP (`places-text`) via `python -u mcp/places_text_search.py`. No Node. Works on Windows when `python` is on PATH.
+Grounding Lite stays at `https://mapstools.googleapis.com/mcp`. Text Search is a second MCP (`places-text`) started as `python -u mcp/places_text_search.py`. No Node. `python` (3.11+, stdlib only) must be on PATH.
 
 ## What you get
 
@@ -19,19 +19,16 @@ Grounding Lite stays at `https://mapstools.googleapis.com/mcp`. Text Search runs
 - Nearby Search or Place Details
 - Remaining quota on the API
 
-## Windows install (Cursor IDE)
+## Install
 
-1. Unzip `google-maps-plugin.zip`. You should see a `google-maps` folder with `.cursor-plugin\plugin.json` inside it.
-2. Copy that folder to a **real directory** (not a shortcut):
+1. Put this folder at `%USERPROFILE%\.cursor\plugins\local\google-maps` (Windows) or `~/.cursor/plugins/local/google-maps` (macOS/Linux). The path must be a real directory, not a shortcut.
+2. Put `python` on PATH (Python 3.11+).
+3. Developer: Reload Window (Cursor IDE).
+4. Customize should list `google-maps`. Set `GOOGLE_MAPS_API_KEY` under Plugins → Configure. Do not put the key in the repo or in chat.
 
-   `%USERPROFILE%\.cursor\plugins\local\google-maps`
+Marketplace / Grok Bot: install the plugin, then set the same key under Plugins → Configure. Text Search runs as plugin stdio on that host. It is not a public HTTPS URL.
 
-   Full example: `C:\Users\Andrew\.cursor\plugins\local\google-maps`
-3. Ensure `python` is on PATH (Python 3.11+; stdlib only, no pip install for this plugin).
-4. Developer: Reload Window.
-5. Customize should list `google-maps`. Set `GOOGLE_MAPS_API_KEY` under Plugins → Configure. Do not put the key in the repo or in chat.
-
-If Customize does not show it, Teams/Enterprise may need **Allow Local Plugin Imports**.
+If Customize does not show a local copy, Teams/Enterprise may need **Allow Local Plugin Imports**.
 
 ## Setup (key)
 
@@ -41,9 +38,9 @@ If Customize does not show it, Teams/Enterprise may need **Allow Local Plugin Im
 
 ## Tools
 
-See `skills\use-google-maps\SKILL.md`.
+See `skills/use-google-maps/SKILL.md`.
 
 - Grounding Lite (`google-maps`): `search_places`, `compute_routes`, `lookup_weather`, `resolve_names`, `resolve_maps_urls`
-- Text Search (`places-text`): `text_search`
+- Text Search (`places-text`): `text_search` (`textQuery` at most 1024 characters after trim)
 
 Primary docs: https://developers.google.com/maps/ai/grounding-lite

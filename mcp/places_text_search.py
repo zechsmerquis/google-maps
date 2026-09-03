@@ -8,7 +8,8 @@ import os
 import sys
 import urllib.error
 import urllib.request
-from typing import Any
+from pathlib import Path
+from typing import Any, Mapping
 
 ENDPOINT = "https://places.googleapis.com/v1/places:searchText"
 PAGE_SIZE = 20
@@ -42,7 +43,41 @@ def log(msg: str) -> None:
     print(msg, file=sys.stderr, flush=True)
 
 
-def sanitize(text: str, api_key: str | None) -> str:
+def load_api_key(environ: Mapping[str, str] | None = None) -> str:
+    env = os.environ if environ is None else environ
+    raw = env.get("GOOGLE_MAPS_API_KEY")
+    if raw is None:
+        return ""
+    return str(raw).strip()
+
+
+def parse_plugin_root(
+    argv: list[str], environ: Mapping[str, str], script_file: str
+) -> Path:
+    fallback = Path(script_file).resolve().parents[1]
+    flagged: str | None = None
+    if "--plugin-root" in argv:
+        idx = argv.index("--plugin-root")
+        if idx + 1 >= len(argv) or not str(argv[idx + 1]).strip():
+            raise ValueError("--plugin-root needs an absolute directory")
+        flagged = str(argv[idx + 1]).strip()
+    env_root = str(environ.get("PLUGIN_ROOT") or "").strip()
+    chosen = flagged or env_root
+    if not chosen:
+        return fallback
+    root = Path(chosen).expanduser()
+    if not root.is_absolute():
+        raise ValueError("plugin root must be an absolute path")
+    root = root.resolve()
+    script = Path(script_file).resolve()
+    try:
+        script.relative_to(root)
+    except ValueError as exc:
+        raise ValueError(f"script {script} is outside plugin root {root}") from exc
+    return root
+
+
+def sanitize(text: str, api_key: str) -> str:
     if not text:
         return text
     out = text
@@ -356,7 +391,13 @@ def dispatch(msg: dict[str, Any]) -> dict[str, Any] | None:
     }
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> None:
+    argv = sys.argv if argv is None else argv
+    try:
+        parse_plugin_root(argv, os.environ, __file__)
+    except ValueError as exc:
+        log(f"plugin root: {exc}")
+        return
     while True:
         try:
             msg, framed = read_message()
@@ -373,7 +414,7 @@ def main() -> None:
                 "id": msg.get("id"),
                 "error": {
                     "code": -32603,
-                    "message": sanitize(str(exc), os.environ.get("GOOGLE_MAPS_API_KEY")),
+                    "message": sanitize(str(exc), load_api_key()),
                 },
             }
         if response is not None:
