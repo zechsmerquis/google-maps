@@ -12,6 +12,7 @@ from typing import Any
 
 ENDPOINT = "https://places.googleapis.com/v1/places:searchText"
 PAGE_SIZE = 20
+TEXT_QUERY_MAX_LEN = 1024
 LANGUAGE_CODE = "en"
 FIELD_MASK = ",".join(
     [
@@ -146,6 +147,8 @@ def validate_args(args: Any) -> tuple[str, float | None] | str:
     if not isinstance(tq, str) or not tq.strip():
         return "textQuery must be a non-empty string"
     text_query = tq.strip()
+    if len(text_query) > TEXT_QUERY_MAX_LEN:
+        return f"textQuery must be at most {TEXT_QUERY_MAX_LEN} characters"
 
     if "minRating" not in args or args.get("minRating") is None:
         return text_query, None
@@ -156,7 +159,6 @@ def validate_args(args: Any) -> tuple[str, float | None] | str:
     value = float(mr)
     if value < 0.0 or value > 5.0:
         return "minRating must be a number from 0 to 5 in steps of 0.5"
-    # Places minRating is a request field; only exact 0.5 steps are accepted.
     if abs(value * 2.0 - round(value * 2.0)) > 1e-9:
         return "minRating must be a number from 0 to 5 in steps of 0.5"
     return text_query, value
@@ -255,6 +257,7 @@ def tools_list() -> dict[str, Any]:
                     "properties": {
                         "textQuery": {
                             "type": "string",
+                            "maxLength": TEXT_QUERY_MAX_LEN,
                             "description": "Free-text place query (include city/region).",
                         },
                         "minRating": {
@@ -368,7 +371,10 @@ def main() -> None:
             response = {
                 "jsonrpc": "2.0",
                 "id": msg.get("id"),
-                "error": {"code": -32603, "message": sanitize(str(exc), None)},
+                "error": {
+                    "code": -32603,
+                    "message": sanitize(str(exc), os.environ.get("GOOGLE_MAPS_API_KEY")),
+                },
             }
         if response is not None:
             write_message(response, framed=framed)

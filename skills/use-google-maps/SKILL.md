@@ -44,7 +44,7 @@ Call **only** `text_search` on MCP server `places-text` when you need structured
 ### Tool
 
 - `text_search({ textQuery, minRating? })` → `TextSearchPage`
-  - `textQuery` required (non-empty after trim; include city/region).
+  - `textQuery` required (non-empty after trim and at most 1024 characters; include city/region).
   - `minRating` optional: 0..5 inclusive, steps of 0.5. Sent as the Places request field when set.
 
 ### Data shape (Text Search)
