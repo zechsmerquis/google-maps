@@ -7,7 +7,7 @@
       }
     },
     "places-text": {
-      "command": "python",
+      "command": "python3",
       "args": ["-u", "mcp/places_text_search.py"],
       "env": {
         "GOOGLE_MAPS_API_KEY": "${GOOGLE_MAPS_API_KEY}",
