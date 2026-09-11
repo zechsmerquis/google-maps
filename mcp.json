@@ -8,7 +8,11 @@
     },
     "places-text": {
       "command": "python3",
-      "args": ["-u", "mcp/places_text_search.py"],
+      "args": [
+        "-u",
+        "-c",
+        "import os, runpy, sys\nfrom pathlib import Path\nNAME = 'places_text_search.py'\ncandidates = []\nroot = os.environ.get('PLUGIN_ROOT', '').strip()\nif root:\n    candidates.append(Path(root).expanduser() / 'mcp' / NAME)\ncandidates.append(Path.cwd() / 'mcp' / NAME)\ncandidates.append(Path.home() / '.cursor' / 'plugins' / 'local' / 'google-maps' / 'mcp' / NAME)\nfound = next((p.resolve() for p in candidates if p.is_file()), None)\nif found is None:\n    sys.stderr.write('places-text: cannot find mcp/places_text_search.py (set PLUGIN_ROOT or run with cwd at the plugin root)\\n')\n    raise SystemExit(1)\nrunpy.run_path(str(found), run_name='__main__')\n"
+      ],
       "env": {
         "GOOGLE_MAPS_API_KEY": "${GOOGLE_MAPS_API_KEY}",
         "PYTHONIOENCODING": "utf-8"

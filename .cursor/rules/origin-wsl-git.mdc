@@ -7,10 +7,8 @@ This repo remote is Cursor Origin (`https://origin.cursor.com/zechs/google-maps.
 
 Native Windows Origin repo operations are unsupported. Do not install or improvise Origin on native Windows.
 
-On Windows, run every `git` and `origin` command inside WSL. Use the checkout path under `/mnt/c/`, such as `/mnt/c/Users/theem/.cursor/plugins/local/google-maps`.
+On Windows, run every `git` and `origin` command inside WSL from the checkout under `/mnt/c/`.
 
 Git Bash is bash and is the wrong environment. Do not tell anyone to "use bash".
 
-Use the WSL Origin binary. Prefer `command -v origin`. Fall back to `/home/zechs/.local/bin/origin`.
-
-If the CLI is missing or auth fails, follow the Cursor Origin skill.
+Use the WSL Origin binary. Prefer `command -v origin`.

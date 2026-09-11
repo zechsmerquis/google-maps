@@ -8,13 +8,14 @@ description: >-
 ---
 # Use Google Maps
 
-Two MCP lanes. Join them on Place `id` (ChIJ…). Do not invent Place IDs.
+Two MCP lanes when both loaded. Join them on Place `id` (ChIJ…). Do not invent Place IDs.
 
 ## When to use which
 
-- Structured rating, hours, price, or typed Place records → call `places-text` tool `text_search`.
+- Structured rating, hours, price, or typed Place records → call `places-text` tool `text_search` if that tool is in the list.
+- If `text_search` is missing, say Text Search did not start on this host. Use Grounding Lite for summaries only. Do not invent rating, hours, or price.
 - A blurb/summary, walk/drive time, or weather → call `google-maps` Grounding Lite tools.
-- Do not read rating, hours, or price out of `search_places`.
+- Do not read rating, hours, or price out of `search_places`. Those fields are not structured Places API values.
 
 ## Grounding Lite (`google-maps`)
 
@@ -39,7 +40,7 @@ Attribute grounded places with `places.googleMapsLinks.placeUrl`.
 
 ## Places Text Search (`places-text`)
 
-Call **only** `text_search` on MCP server `places-text` when you need structured fields.
+Call **only** `text_search` on MCP server `places-text` when that tool is available and you need structured fields. If the tool is absent, do not pretend the lane ran.
 
 ### Tool
 
@@ -64,5 +65,5 @@ Call **only** `text_search` on MCP server `places-text` when you need structured
 - Add Atmosphere fields, reviews, photos, or `getMedia`
 - Call Nearby Search or Place Details through this plugin
 - Fetch listing photos from these tools
-- Cull on stars from a Grounding Lite summary. Use `text_search` fields.
+- Cull on stars from a Grounding Lite summary. Use `text_search` fields when that tool is available.
 - Run maps ground-truth trip jobs; consume the APIs, do not own neighborhood scouting

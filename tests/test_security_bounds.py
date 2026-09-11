@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 import subprocess
 import sys
@@ -74,6 +75,13 @@ class DispatchKeyRedaction(unittest.TestCase):
         src = Path(m.__file__).read_text(encoding="utf-8")
         self.assertNotIn("sanitize(str(exc), None)", src)
         self.assertIn("sanitize(str(exc), load_api_key())", src)
+        self.assertIn("api_key = load_api_key()", src)
+
+    def test_tools_list_exposes_min_rating_bounds(self) -> None:
+        schema = m.tools_list()["tools"][0]["inputSchema"]["properties"]["minRating"]
+        self.assertEqual(schema["minimum"], 0)
+        self.assertEqual(schema["maximum"], 5)
+        self.assertEqual(schema["multipleOf"], 0.5)
 
 
 class PluginRoot(unittest.TestCase):
@@ -89,6 +97,24 @@ class PluginRoot(unittest.TestCase):
                 {},
                 str(Path(m.__file__)),
             )
+
+    def test_main_continues_after_bad_plugin_root(self) -> None:
+        payload = b'{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}\n'
+        env = {k: v for k, v in os.environ.items() if k.upper() != "PYTHONIOENCODING"}
+        env["PLUGIN_ROOT"] = tempfile.mkdtemp()
+        env.pop("GOOGLE_MAPS_API_KEY", None)
+        proc = subprocess.run(
+            [sys.executable, "-u", str(ROOT / "mcp" / "places_text_search.py")],
+            cwd=ROOT,
+            input=payload,
+            capture_output=True,
+            env=env,
+            timeout=15,
+        )
+        self.assertEqual(proc.returncode, 0, proc.stderr.decode("utf-8", errors="replace"))
+        self.assertIn("plugin root:", proc.stderr.decode("utf-8", errors="replace"))
+        line = proc.stdout.decode("utf-8").splitlines()[0]
+        self.assertEqual(json.loads(line)["result"]["serverInfo"]["name"], "places-text")
 
 
 if __name__ == "__main__":

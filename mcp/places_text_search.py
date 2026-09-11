@@ -30,7 +30,7 @@ FIELD_MASK = ",".join(
 )
 PROTOCOL_VERSION = "2024-11-05"
 SERVER_NAME = "places-text"
-SERVER_VERSION = "0.2.0"
+SERVER_VERSION = "0.3.0"
 
 TOOL_NAME = "text_search"
 TOOL_DESCRIPTION = (
@@ -261,13 +261,12 @@ def handle_tools_call(params: Any) -> dict[str, Any]:
         return tool_result(validated, is_error=True)
     text_query, min_rating = validated
 
-    api_key = os.environ.get("GOOGLE_MAPS_API_KEY")
-    if not api_key or not str(api_key).strip():
+    api_key = load_api_key()
+    if not api_key:
         return tool_result(
             "GOOGLE_MAPS_API_KEY is missing. Set it in Plugins → Configure.",
             is_error=True,
         )
-    api_key = str(api_key).strip()
 
     try:
         page = call_text_search(text_query, min_rating, api_key)
@@ -297,6 +296,9 @@ def tools_list() -> dict[str, Any]:
                         },
                         "minRating": {
                             "type": "number",
+                            "minimum": 0,
+                            "maximum": 5,
+                            "multipleOf": 0.5,
                             "description": "Optional minimum rating 0..5 in steps of 0.5.",
                         },
                     },
@@ -397,7 +399,6 @@ def main(argv: list[str] | None = None) -> None:
         parse_plugin_root(argv, os.environ, __file__)
     except ValueError as exc:
         log(f"plugin root: {exc}")
-        return
     while True:
         try:
             msg, framed = read_message()

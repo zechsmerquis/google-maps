@@ -1,12 +1,13 @@
 {
   "name": "google-maps",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Google Maps for agents: Maps Grounding Lite (search, routes, weather) plus Places Text Search for structured ratings, hours, and price. Saved lists, transit, and photos stay out.",
   "author": {
     "name": "Andrew Davis"
   },
   "license": "MIT",
   "keywords": ["google-maps", "places", "routes", "weather", "mcp"],
+  "logo": "assets/logo.svg",
   "variables": {
     "type": "object",
     "properties": {
