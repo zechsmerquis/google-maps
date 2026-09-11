@@ -35,12 +35,21 @@ class PublishContract(unittest.TestCase):
         self.assertIn("description:", skill)
         self.assertIn("If `text_search` is missing", skill)
         self.assertIn("Do not invent rating, hours, or price", skill)
+        self.assertIn("/home/box/agent-data/box-secrets.json", skill)
+        self.assertIn("card.GOOGLE_MAPS_API_KEY", skill)
+        self.assertIn("Never cull on Grounding Lite summary prose", skill)
+        self.assertIn("${GOOGLE_MAPS_API_KEY}", skill)
+        self.assertNotIn("do not own neighborhood scouting", skill)
 
-    def test_readme_does_not_claim_grok_stdio_is_proven(self) -> None:
+    def test_readme_does_not_claim_grok_stdio_or_remote_bind_is_proven(self) -> None:
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
-        self.assertIn("This repo has not been driven end to end on a Grok Bot machine", readme)
+        self.assertIn("Grok Bot does not attach stdio", readme)
+        self.assertIn("End-to-end remote MCP key bind is not proven", readme)
+        self.assertIn("/home/box/agent-data/box-secrets.json", readme)
+        self.assertIn("card.GOOGLE_MAPS_API_KEY", readme)
         self.assertIn("python3", readme)
         self.assertNotIn("Grok Bot already has it", readme)
+        self.assertNotIn("This repo has not been driven end to end on a Grok Bot machine", readme)
 
     def test_origin_rule_has_no_personal_paths(self) -> None:
         rule = (ROOT / ".cursor" / "rules" / "origin-wsl-git.mdc").read_text(encoding="utf-8")
