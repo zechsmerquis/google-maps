@@ -38,8 +38,7 @@ class PublishContract(unittest.TestCase):
 
     def test_readme_does_not_claim_grok_stdio_is_proven(self) -> None:
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
-        self.assertIn("cursor.com/marketplace/publish", readme)
-        self.assertIn("This repo has not driven the logged-in Grok Bot Customize UI", readme)
+        self.assertIn("This repo has not been driven end to end on a Grok Bot machine", readme)
         self.assertIn("python3", readme)
         self.assertNotIn("Grok Bot already has it", readme)
 

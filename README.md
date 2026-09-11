@@ -1,15 +1,16 @@
 # google-maps
 
-Cursor plugin that connects agents to [Maps Grounding Lite](https://developers.google.com/maps/ai/grounding-lite) over a remote MCP, plus Places API (New) Text Search over a Python stdio MCP.
+Google Maps for a Grok Bot. Clone this repo onto the bot's computer and run it. Two lanes:
 
-Grounding Lite is `https://mapstools.googleapis.com/mcp`. Text Search is a second MCP (`places-text`) started with `python3` on the host that loaded the plugin. No Node. `python3` (3.11+, stdlib only) must be on PATH.
+- **Grounding Lite.** Google's hosted MCP at `https://mapstools.googleapis.com/mcp`. Attach it to the bot as a remote MCP connector with an `X-Goog-Api-Key` header. Nothing to install. Place summaries, Place IDs, coordinates, Maps links, walking or driving distance and duration, weather.
+- **Places Text Search.** `mcp/places_text_search.py`, a Python script the bot runs on its own machine. Structured rating, hours, price level, and typed Place records that Grounding Lite does not return. Standard library only, `python3` 3.11+.
 
-This is a Cursor Plugin (`.cursor-plugin/plugin.json`). Keep that format so `GOOGLE_MAPS_API_KEY` can be set under Plugins → Configure.
+This is not a Cursor marketplace plugin. `.cursor-plugin/` and `mcp.json` are left over from that packaging and nothing below uses them (see [Cursor plugin files](#cursor-plugin-files)).
 
 ## What you get
 
 - Search places (Grounding Lite summaries, Place IDs, coordinates, Maps links)
-- Structured Text Search places (rating, hours, price level, typed Place records) when `places-text` starts
+- Structured Text Search places (rating, hours, price level, typed Place records)
 - Walking or driving distance and duration
 - Current weather and short forecasts
 
@@ -19,49 +20,87 @@ This is a Cursor Plugin (`.cursor-plugin/plugin.json`). Keep that format so `GOO
 - Transit, traffic, or turn-by-turn navigation
 - Place photos, reviews, or Atmosphere fields
 - Nearby Search or Place Details
-- Remaining quota on the API
-- A public HTTPS Text Search MCP. Google does not host Places Text Search over MCP.
+- Remaining quota (the APIs do not report it)
+- A hosted Text Search MCP. Google does not serve Places Text Search over MCP, so the script runs where the bot runs.
 
-## Install
+## Before you start
 
-1. Put this folder at `%USERPROFILE%\.cursor\plugins\local\google-maps` (Windows) or `~/.cursor/plugins/local/google-maps` (macOS/Linux). The path must be a real directory, not a shortcut.
-2. Put `python3` on PATH (Python 3.11+). Windows installers can add a `python3` alias.
-3. Developer: Reload Window (Cursor IDE).
-4. Customize should list `google-maps`. Set `GOOGLE_MAPS_API_KEY` under Plugins → Configure. Do not put the key in the repo or in chat.
+1. A Google Cloud project with **Maps Grounding Lite** and **Places API (New)** enabled, billing on. Google's Grounding Lite page also offers a demo key for prototyping.
+2. One API key restricted to those two APIs. Calls bill to it.
+3. Keep the key out of this repo, out of chat, and out of ordinary files. Grok Bot's rule is the secure secret card: https://cursor.com/help/grok-bot/secrets
+4. Grounding Lite terms: attribute Google Maps sources with `places.googleMapsLinks.placeUrl`, and use a model that complies with the Google Maps Platform terms. See https://developers.google.com/maps/ai/grounding-lite
 
-Marketplace: install the plugin, then set the same key under Plugins → Configure.
+## 1. Clone
 
-If Customize does not show a local copy, Teams/Enterprise may need **Allow Local Plugin Imports**.
+On the bot's computer, in its durable workspace:
 
-## Grok Bot
+```bash
+git clone https://origin.cursor.com/zechs/google-maps.git /workspace/google-maps
+cd /workspace/google-maps
+python3 --version   # 3.11 or newer
+```
 
-Grounding Lite is remote HTTPS. It works on Grok Bot after the plugin loads and the key is set.
+The repository lives on Cursor Origin and is not public. The bot needs read access to clone it.
 
-Text Search is plugin stdio, not a public URL. The host must run `python3` and find `mcp/places_text_search.py` via `PLUGIN_ROOT`, the process cwd, or `~/.cursor/plugins/local/google-maps`. Custom Grok Bot connectors that only accept a public HTTPS URL cannot replace this lane.
+## 2. Grounding Lite: add a remote connector
 
-This repo has not driven the logged-in Grok Bot Customize UI. If `text_search` is missing from the tool list, say so and use Grounding Lite for summaries only. Do not invent ratings, hours, or price.
+Grok Bot has no settings form for custom MCP servers. Tell the bot in chat:
 
-## Setup (key)
+> Add a custom MCP server called google-maps at https://mapstools.googleapis.com/mcp. It needs the header X-Goog-Api-Key set to my Google Maps API key.
 
-1. Google Cloud project with **Maps Grounding Lite** and **Places API (New)** enabled, and billing on (or Google's documented demo key for prototyping).
-2. API key restricted to those APIs.
-3. Paste the key only in Plugins → Configure. The same key is injected into both MCP entries.
+The bot confirms the name and URL and stores the key as a header on the server entry. Give the key through the secure secret card when one is shown, not in ordinary chat. Tools are available from the next message: `search_places`, `compute_routes`, `lookup_weather`, `resolve_names`, `resolve_maps_urls`.
 
-## Tools
+Nothing from this repo is needed for this lane. The skill (step 4) tells the bot how to use the tools.
 
-See `skills/use-google-maps/SKILL.md`.
+To check the endpoint from the bot's shell (lists tools without a key; calls need the key and bill):
 
-- Grounding Lite (`google-maps`): `search_places`, `compute_routes`, `lookup_weather`, `resolve_names`, `resolve_maps_urls`
-- Text Search (`places-text`): `text_search` (`textQuery` at most 1024 characters after trim)
+```bash
+curl -s -X POST https://mapstools.googleapis.com/mcp \
+  -H 'Content-Type: application/json' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+```
 
-## Publish
+## 3. Text Search: run the script
 
-Submit the public Git URL at https://cursor.com/marketplace/publish. Marketplace listing requires a public repository. This tree does not change remote visibility.
+`mcp/places_text_search.py` speaks newline-delimited JSON-RPC on stdin and stdout and exposes one tool, `text_search`. A one-shot call needs no `initialize` handshake. The script reads the key from `GOOGLE_MAPS_API_KEY` in its environment.
 
-Verify locally:
+One query per process, from the clone root:
+
+```bash
+printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"text_search","arguments":{"textQuery":"bakeries in Paris","minRating":4.5}}}' \
+  | python3 -u mcp/places_text_search.py
+```
+
+The reply is one JSON-RPC line:
+
+- `result.isError` is `false`: `result.content[0].text` is a JSON string, `{"places": [...]}`, up to 20 typed Place records. Parse that string.
+- `result.isError` is `true`: `result.content[0].text` is the reason. Missing key, invalid arguments, or a Places API error with the key redacted.
+- No output or a non-zero exit: `python3` is missing or the path is wrong. The script exits 0 on API errors.
+
+Arguments: `textQuery` (required, non-empty, at most 1024 characters after trim, include a city or region) and `minRating` (optional, 0 to 5 in steps of 0.5). Build the request with a JSON encoder when the query contains quotes.
+
+Getting the key into the script's environment is your call; the repo only reads the variable. Never put the key on the command line or in the repo, and keep it restricted to the two APIs.
+
+If a runtime can spawn local stdio MCP servers, `python3 -u mcp/places_text_search.py` is also a complete server (`initialize`, `tools/list`, `tools/call`, `ping`). Grok Bot does not attach stdio servers today, so the one-shot form above is the documented path.
+
+## 4. Give the bot the skill
+
+`skills/use-google-maps/SKILL.md` says which lane answers which question, the exact script command, the data shapes, and what never to invent. Ask the bot to save that file's contents as a skill named `use-google-maps`, or put the rules that must always hold in the bot's description.
+
+## Verify
 
 ```bash
 python3 -m unittest discover -s tests -v
 ```
 
-Primary docs: https://developers.google.com/maps/ai/grounding-lite
+The tests cover argument bounds, key redaction, UTF-8 output, and the script contract. Nothing in them calls Google with a key.
+
+## Cursor plugin files
+
+`.cursor-plugin/plugin.json` and `mcp.json` remain from packaging this as a Cursor plugin. They are not the product and nothing above reads them. They still describe a working Cursor IDE local plugin (copy the repo to `~/.cursor/plugins/local/google-maps`, set `GOOGLE_MAPS_API_KEY` under Plugins → Configure), which is why `tests/test_plugin_spawn.py` still exercises them. Grok Bot does not run plugin stdio servers, so that path does not apply to it.
+
+## Status
+
+Measured from a cloud VM without a key: Grounding Lite `tools/list` returns the five tools; the script answers a one-shot `tools/call` with the missing-key error and exits 0; the unit tests pass. This repo has not been driven end to end on a Grok Bot machine with a real key. If `text_search` does not run, the skill tells the bot to say so and fall back to Grounding Lite summaries. Do not invent ratings, hours, or price.
+
+Primary docs: https://developers.google.com/maps/ai/grounding-lite and https://developers.google.com/maps/documentation/places/web-service/text-search
